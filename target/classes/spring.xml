@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="org.h2.tools.Server" class="org.h2.tools.Server"
+		factory-method="createTcpServer" init-method="start"
+		destroy-method="stop">
+		<constructor-arg
+			value="-tcp,-tcpAllowOthers,true" />
+	</bean>
+	<bean id="h2dataSource"
+		class="org.apache.commons.dbcp.BasicDataSource"
+		init-method="createDataSource"
+		destroy-method="close" >
+		<property name="driverClassName" value="org.h2.Driver" />
+		<property name="url" value="jdbc:h2:tcp://localhost/~/db/qq" />
+		<property name="username" value="sa" />
+		<property name="password" value="sa" />
+	</bean>
+ <!-- 
+ 	<bean id="h2dataSource"
+		class="org.h2.jdbcx.JdbcConnectionPool"
+		init-method="create"
+		destroy-method="dispose" >
+		<property name="driverClassName" value="org.h2.Driver" />
+		<property name="url" value="jdbc:h2:~/db/apple" />
+		<property name="username" value="sa" />
+		<property name="password" value="" />
+	</bean>
+	-->
+
+	
+	<!-- 定义JdbcTemplate -->
+	<bean id="jdbcTemplate"
+		class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="h2dataSource"/>
+	</bean>
+	
+	<bean id="simpleJdbcTemplate" class="org.springframework.jdbc.core.simple.SimpleJdbcTemplate"> 
+  		<constructor-arg ref="h2dataSource" /> 
+	</bean> 
+	<bean id="orderDao" class="com.apple.dao.impl.OrderDaoImpl">
+		<property name="jdbcTemplate" ref="jdbcTemplate"/>
+		<property name="insertSql" value="INSERT INTO APPLE_ORDER (ORDERNO, APPLEID, STATUS, GOODSNAME, LASTNAME, FIRSTNAME, ADDRESS, PHONENO, ORDERDATE, SHIPDATE, ARRIVALDATE) VALUES (?,?,?,?,?,?,?,?,?,?,?)"></property>
+	</bean>
+	<bean id="userDao" class="com.apple.dao.impl.UserDaoImpl">
+		<property name="jdbcTemplate" ref="jdbcTemplate"/>
+		<property name="insertSql" value="INSERT INTO APPLE_USER (APPLEID, PWD) VALUES (?,?)"></property>
+	</bean>
+	<bean id="appleService" class="com.apple.service.AppleService">
+		<property name="orderDao" ref="orderDao"></property>
+		<property name="userDao" ref="userDao"></property>
+	</bean>
+</beans>
