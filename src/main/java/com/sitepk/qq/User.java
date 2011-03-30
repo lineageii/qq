@@ -84,6 +84,12 @@ public class User {
 		String verifycode = rs.getText().split(",")[1].replaceAll("'", "").replace(");", "");
 		log.info(this.toString() + " verifycode:" + verifycode);
 		
+		// 需要输入验证码
+		if(verifycode.length() > 10){
+			log.error("需要验证码!");
+			throw new Exception("需要验证码!");
+		}
+		
 		String p = PasswordEncrypt.passwordEcrypt(this.password, verifycode);
 		log.info("p:" + p);
 		
@@ -150,5 +156,34 @@ public class User {
 		log.info("sendMsg response:" + rs.getText());
 	}
 
+	
+	/**
+	 * 发送群消息
+	 * @param to
+	 * @param msgParam
+	 * @throws Exception
+	 */
+	public void sendGroupMsg(String to, String msgParam) throws Exception{
+		String url = "http://d.web2.qq.com/channel/send_group_msg2";
+		PostMethodWebRequest post = new PostMethodWebRequest(url);
+		GroupMessage message = new GroupMessage();
+		message.setGroup_uin(to);
+		message.setClientid("292167");
+		message.setPsessionid(this.psessionid);
+		message.setContent(msgParam);
+		String msg = new JSONObject(message).toString();
+		post.setParameter("r", msg);
+		post.setParameter("clientid", "292167");
+		post.setParameter("psessionid", this.psessionid);
+		WebResponse rs;
+		
+		//wc.putCookie("pgv_pvid", "6477164270");
+		//wc.putCookie("pgv_flv", "10.1 r102");
+		//wc.putCookie("pgv_info", "pgvReferrer=&ssid=s6494109392");
+		wc.setHeaderField("Referer", "http://d.web2.qq.com/proxy.html?v=20101025002");
+		
+		rs = wc.getResponse(post);
+		log.info("sendMsg response:" + rs.getText());
+	}
 	
 }
