@@ -1,6 +1,10 @@
 package com.sitepk.qq;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
@@ -83,19 +87,20 @@ public class WebQQClient {
 
 	public void login() throws Exception {
 		wc = new WebConversation();
+		//wc.setProxyServer("127.0.0.1", 8888);
 		HttpUnitOptions.setDefaultCharacterSet("utf-8");
 		HttpUnitOptions.setScriptingEnabled(false);
 		HttpUnitOptions.setExceptionsThrownOnScriptError(false);
 		//HttpUnitOptions.setLoggingHttpHeaders(true);
 		HttpUnitOptions.setAcceptCookies(true);
-		wc.setUserAgent("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/534.12 (KHTML, like Gecko) Chrome/9.0.587.0 Safari/534.12");
+		wc.setUserAgent("Mozilla/5.0 (Windows NT 6.1) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.83 Safari/535.11");
 		ClientProperties.getDefaultProperties().setAcceptCookies(true);
 
 		WebResponse rs;
 		//rs= wc.getResponse("http://web2.qq.com/");
 		//setCookie(rs);
 
-		String url = "http://ptlogin2.qq.com/check?uin=" + this.id + "&appid=1003903&r=0.3622996990703624";
+		String url = "http://ptlogin2.qq.com/check?uin=" + this.id + "&appid=1003903&r=0.2842747748363763";
 		rs = wc.getResponse(url);
 		setCookie(rs);
 		log.info("response:" + rs.getText());
@@ -105,19 +110,24 @@ public class WebQQClient {
 		// 需要输入验证码
 		if (verifycode.length() > 10) {
 			log.error("需要验证码!");
-			throw new Exception("需要验证码!");
+			log.info("验证码地址:" + "http://captcha.qq.com/getimage?aid=1003903&r=0.3318515357095748&uin=" + this.id);
+			BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
+			verifycode = stdin.readLine();
+			//throw new Exception("需要验证码!");
 		}
 
 		String p = PasswordEncrypt.passwordEcrypt(this.password, verifycode);
-		log.info("p:" + p);
+		log.info("p:" + p);;
 
 		GetMethodWebRequest get = new GetMethodWebRequest("http://ptlogin2.qq.com/login");
 		get.setParameter("u", this.id);
 		get.setParameter("p", p);
 		get.setParameter("verifycode", verifycode);
+		get.setParameter("webqq_type", "10");
 		get.setParameter("remember_uin", "1");
+		get.setParameter("login2qq", "1");
 		get.setParameter("aid", "1003903");
-		get.setParameter("u1", "http://web2.qq.com/loginproxy.html?login_level=3");
+		get.setParameter("u1", "http://web2.qq.com/loginproxy.html?login2qq=1&webqq_type=10");
 		get.setParameter("h", "1");
 		get.setParameter("ptredirect", "0");
 		get.setParameter("ptlang", "2052");
@@ -125,7 +135,8 @@ public class WebQQClient {
 		get.setParameter("pttype", "1");
 		get.setParameter("dumy", "");
 		get.setParameter("fp", "loginerroralert");
-		get.setParameter("mibao_css", "");
+		get.setParameter("action", "2-21-6717");
+		get.setParameter("mibao_css", "m_webqq");
 
 		rs = wc.getResponse(get);
 		setCookie(rs);
@@ -137,15 +148,17 @@ public class WebQQClient {
 		PostMethodWebRequest post = new PostMethodWebRequest("http://d.web2.qq.com/channel/login2");
 		String ptwebqq = wc.getCookieValue("ptwebqq");
 		log.info("ptwebqq:" + ptwebqq);
-		String r = "{\"status\":\"\",\"ptwebqq\":\"" + ptwebqq
-				+ "\",\"passwd_sig\":\"\",\"clientid\":\"292167\",\"psessionid\":null}";
-		//{"status":"","ptwebqq":"7896466821f021f41ba65eb83d689e671d7b08eb02c0c165ef8589bb772cf9db","passwd_sig":"","clientid":"292167","psessionid":null}
+		String r = "{\"status\":\"online\",\"ptwebqq\":\"" + ptwebqq
+				+ "\",\"passwd_sig\":\"\",\"clientid\":\"64768904\",\"psessionid\":null}";
+		//{"status":"online","ptwebqq":"94355c82e5692825e17a1d95c672b6371e71dec45399845b6d3f14fb23557dfb","passwd_sig":"","clientid":"42599326","psessionid":null}
+		//{"status":"","ptwebqq":"7896466821f021f41ba65eb83d689e671d7b08eb02c0c165ef8589bb772cf9db","passwd_sig":"","clientid":"64768904","psessionid":null}
 		post.setParameter("r", r);
 
-		wc.setHeaderField("Referer", "http://d.web2.qq.com/proxy.html?v=20101025002");
-		wc.putCookie("pgv_pvid", "215336480");
-		wc.putCookie("pgv_flv", "10.1 r102");
-		wc.putCookie("pgv_info", "pgvReferrer=&ssid=s7792437458");
+		wc.setHeaderField("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=2");
+		//setCookie(rs);
+		//wc.putCookie("pgv_pvid", "215336480");
+		//wc.putCookie("pgv_flv", "10.1 r102");
+		//wc.putCookie("pgv_info", "pgvReferrer=&ssid=s7792437458");
 
 		rs = wc.getResponse(post);
 
@@ -200,11 +213,11 @@ public class WebQQClient {
 	}
 
 	public void sendMsg(String to, String msgParam) throws Exception {
-		String url = "http://d.web2.qq.com/channel/send_msg2";
+		String url = "http://s.web2.qq.com/channel/send_msg2";
 		PostMethodWebRequest post = new PostMethodWebRequest(url);
 		Message message = new Message();
 		message.setTo(firendsRuid.get(to).getUin());
-		message.setClientid("292167");
+		message.setClientid("64768904");
 		message.setPsessionid(this.psessionid);
 		message.setContent(msgParam);
 		String msg = new JSONObject(message).toString();
@@ -226,26 +239,60 @@ public class WebQQClient {
 	 * @throws Exception
 	 */
 	public void sendGroupMsg(String to, String msgParam) throws Exception {
-		String url = "http://d.web2.qq.com/channel/send_group_msg2";
+		String url = "http://d.web2.qq.com/channel/send_qun_msg2";
 		PostMethodWebRequest post = new PostMethodWebRequest(url);
 		GroupMessage message = new GroupMessage();
-		message.setGroup_uin(to);
-		message.setClientid("292167");
+		message.setGroup_uin(Long.valueOf(to));
+		message.setClientid("64768904");
 		message.setPsessionid(this.psessionid);
 		message.setContent(msgParam);
 		String msg = new JSONObject(message).toString();
+		log.info(msg);
 		post.setParameter("r", msg);
-		post.setParameter("clientid", "292167");
+		post.setParameter("clientid", "64768904");
 		post.setParameter("psessionid", this.psessionid);
 		WebResponse rs;
 
 		//wc.putCookie("pgv_pvid", "6477164270");
 		//wc.putCookie("pgv_flv", "10.1 r102");
 		//wc.putCookie("pgv_info", "pgvReferrer=&ssid=s6494109392");
-		wc.setHeaderField("Referer", "http://d.web2.qq.com/proxy.html?v=20101025002");
+		wc.setHeaderField("Referer", "http://d.web2.qq.com/proxy.html?v=20110331002&callback=2");
 
 		rs = wc.getResponse(post);
 		log.info("sendMsg response:" + rs.getText());
 	}
+	
+	@SuppressWarnings("unchecked")
+	public List<Group> getAllGroups() throws Exception {
+		//{"vfwebqq":"3e99140e076c4dc3c8a774f1e3a37518055f3f39f94428a8eaa07c1f7c0ebfea3a18792878f2c061"}
+		
+		String url = "http://s.web2.qq.com/api/get_group_name_list_mask2";
+		String content = "{\"vfwebqq\":\"" + vfwebqq + "\"}";
+		PostMethodWebRequest post = new PostMethodWebRequest(url);
+		post.setParameter("r", content);
+
+		wc.setHeaderField("Referer",
+				"http://s.web2.qq.com/proxy.html?v=20110412001&callback=1&id=2");
+
+		WebResponse rs = wc.getResponse(post);
+		log.info("sendMsg response:" + rs.getText());
+		
+		List<Group> groups = new ArrayList<Group>();
+		
+		JSONObject retJson = new JSONObject(rs.getText());
+		if (retJson.getInt("retcode") == 0) {
+			JSONArray infos = retJson.getJSONObject("result").getJSONArray("gnamelist");
+			for (int i = 0; i < infos.length(); i++) {
+				JSONObject obj = infos.getJSONObject(i);
+				Group group = new Group();
+				group.setGid(obj.getString("gid"));
+				group.setName(obj.getString("name"));
+				group.setCode(obj.getString("code"));
+				groups.add(group);
+			}
+		}
+		return groups;
+	}
+
 
 }
